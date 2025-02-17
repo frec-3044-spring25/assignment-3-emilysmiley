@@ -43,20 +43,29 @@ ggplot(co2, aes(x = decimal_date, y = monthly_average)) +
 Describe the overall trend in the CO2 data.
 
 **Answer 1:**
-The CO2 dataset is a positive linear relationship that highlights the rising trends of climae change being linked to human activities, particularly in burning of fossil fuels and the release of CO2 into the atmosphere. 
+The CO2 dataset is a positive linear relationship that highlights the rising trends of climate change being linked to human activities, particularly in burning of fossil fuels and the release of CO2 into the atmosphere. 
 **Question 2:**
 
 How does CO2 vary within a year? What month is it at max? Min? What might explain this sub-annual pattern? (you will need to write code and make a plot to answer this question)
 
 ```{r}
-ggplot(co2, aes(x = decimal_date, y = monthly_average)) + 
-  geom_line() + 
-  geom_line(aes(y = deseasonalized), color = "blue") +
-  labs(x = "Year", y = "CO2 concentration (ppm)")
+avg_year <- co2 |> 
+  group_by(month) |> 
+  summarize(mean_monthly_av = mean(monthly_average, na.rm = TRUE))
+
+ggplot(avg_year, aes(x = month, y = mean_monthly_av)) +
+  geom_point() +
+  geom_line() +
+  labs(title = "CO2 Concentration Changes Over Time",
+       x = "Month",
+       y = "CO2 concentration (ppm)") +
+  scale_x_continuous(breaks = 1:12, labels = month.abb) +
+  theme_classic()
+
 ```
 
 **Answer 2:**
-
+CO2 concentration is at it's peak in May. May represents a time when CO2 accumulation peaks before it can fully ramps up photosynthetic activity. This gives a clear seasonal signal, with CO2 levels starting to decrease after May as the natural processes of plant growth and CO2 uptake take hold.
 ## Global Temperature Data
 
 Current climate change affects many aspects of the environment, with socio-economic consequences. For example, a warmer climate can allow new diseases to be introduced and persist (e.g., West Nile became established in the United States after an unusually warm winter, which allowed the mosquitoes that carry the virus to survive and spread). We are concerned not only with the actual temperature but also with the rate at which it changes. Rapid changes make it more likely that species cannot adapt and will go extinct.
