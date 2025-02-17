@@ -139,17 +139,23 @@ helpful tips for reading the data.
 
 **Answer 4:**
 ```{r}
-url <- "https://data.giss.nasa.gov/gistemp/graphs/graph_data/Global_Mean_Estimates_based_on_Land_and_Ocean_Data/graph.tx"
+library(readr)
 
-temp <-  read.table(url, 
-                    header = TRUE,
-                    sep = "",
-                    quote="#",
-                    col.names = c("Year", "No_Smoothing", "Lowess(5)"),
-                    na = c("-1", "-99.99"), 
-                    skip = 4)  # Skips the first few lines (e.g., metadata) before actual data
-temp
+file_url <- "https://data.giss.nasa.gov/gistemp/graphs/graph_data/Global_Mean_Estimates_based_on_Land_and_Ocean_Data/graph.txt"
 
+temp_data <- read.table(file_url,
+                        sep = ",",
+                        header = TRUE,
+                        colnames(c("Year", "No_Smoothing", "Lowess(5)")),
+                        comment.char = "#", 
+                        skip = 4)
+str(temp_data)
+
+# Assuming the data has years and temperature anomalies (you can adjust column names based on your inspection)
+# Rename the columns for clarity
+#colnames(temp_data) <- c("Year", "No_Smoothing", "Lowess(5)")
+
+summary(temp_data)
 ```
 
 
@@ -158,6 +164,19 @@ temp
 Plot the trend in global mean temperatures over time. Describe what you
 see in the plot and how you interpret the patterns you observe.
 
+```{r}
+avg_temp <- temp_data |> 
+  group_by(No_Smoothing) |> 
+  summarize(mean_temp = mean(No_Smoothing, na.rm = TRUE))
+
+ggplot(avg_temp, aes(x = Year, y = No_Smoothing)) +
+  geom_point() +
+  geom_line() +
+  labs(title = "Global Mean Temperatures Over Time",
+       x = "Year",
+       y = "Annual Mean Temperature") +
+  scale_x_continuous
+```
 **Answer 5:**
 
 ## Evaluating the evidence for a "Pause" in warming?
@@ -197,8 +216,6 @@ rollmean(data, k = 3, fill = NA)
 #install.packages("TTR")
 library(TTR)
 SMA(data, n = 3)
-
-#attempt at doing the 
 ```
 
 To calculate a rolling average in a R, a simply command to use is the rollmean function. An example of how to use the rollmean function that was produced by Stack Overflow that used the zoo package to run. I also saw that there is another way to do the rollmean function and that is by using the the dplyr or TTR packages. For example, the TTR package offers a SMA() function to calculate the Simple Moving Average which works very similarly to the rollmean. It doesn't seem like you really need to modify the data once you have it, so this format kinda makes sense.
@@ -210,14 +227,52 @@ To calculate a rolling average in a R, a simply command to use is the rollmean f
     Question 4) with three new columns: 5-year running averages, 10-year
     running averages, and 20-year running averages.
 
+```{r}
+# Load necessary libraries
+library(dplyr)
+library(zoo)
+
+# Assume temp_data is the dataset with actual temperature anomaly data
+# Example: Load your actual data (use read.table or read.csv, etc.)
+# temp_data <- read.table("path_to_your_data.txt", header = TRUE)
+
+# Create new columns with rolling averages using mutate()
+temp_data <- temp_data |> 
+  mutate(
+    Rolling_5_Year = rollmean(Temperature_Anomaly, k = 5, fill = NA, align = "center"),
+    Rolling_10_Year = rollmean(Temperature_Anomaly, k = 10, fill = NA, align = "center"),
+    Rolling_20_Year = rollmean(Temperature_Anomaly, k = 20, fill = NA, align = "center")
+  )
+
+# Display the updated data frame with the new rolling average columns
+temp_data
+
+```
 **Answer 7:**
+A 5-year average, also known as a 5-year rolling average, can take the average temperatures of the given 5 year window period to where it can compute the average temperature for each of those 5 years. This allows for a more precise view of long-term trends. The annual average temperature is based just off a specific year. It's calculated by taking the sum of the temperatures for each month or day within that year and dividing by the total number of months or days. 
 
 **Question 8:**
 
 Plot the different averages on the *same plot* and describe what
 differences you see and why.
 
+```{r}
+# Plot the original temperature anomalies and the rolling averages
+ggplot(temp_data, aes(x = Year)) +
+  geom_line(aes(y = Temperature_Anomaly), color = "grey", size = 1) + # Original data
+  geom_line(aes(y = Rolling_5_Year), color = "blue", size = 1.2) + # 5-year rolling average
+  geom_line(aes(y = Rolling_10_Year), color = "red", size = 1.2) + # 10-year rolling average
+  geom_line(aes(y = Rolling_20_Year), color = "green", size = 1.2) + # 20-year rolling average
+  labs(title = "Global Temperature Anomalies and Rolling Averages", 
+       x = "Year", 
+       y = "Temperature Anomaly (°C)") +
+  theme_classic() +
+  scale_color_manual(values = c("grey", "blue", "red", "green"))
+
+```
+
 **Answer 8:**
+By looking at these different averages we can see how short-term changes like yearly ups and downs become less noticeable over time. This helps us understand the clearer trends that happen in the long run. This is especially helpful in studying the climate because it is important to tell the difference between changes from one year to the next and changes that happen over a long period. A longer averaging period makes the chart less affected by short-term changes which can sometimes hide the true overall trend.
 
 **Question 9:**
 
