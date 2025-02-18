@@ -72,7 +72,9 @@ Describe the overall trend in the CO2 data.
 **Answer 1:** The CO2 dataset is a positive linear relationship that
 highlights the rising trends of climate change being linked to human
 activities, particularly in burning of fossil fuels and the release of
-CO2 into the atmosphere. **Question 2:**
+CO2 into the atmosphere. 
+
+**Question 2:**
 
 How does CO2 vary within a year? What month is it at max? Min? What
 might explain this sub-annual pattern? (you will need to write code and
@@ -95,10 +97,12 @@ ggplot(avg_year, aes(x = month, y = mean_monthly_av)) +
 ```
 
 **Answer 2:** CO2 concentration is at it's peak in May. May represents a
-time when CO2 accumulation peaks before it can fully ramps up
+time when CO2 accumulation peaks before it can fully ramp up
 photosynthetic activity. This gives a clear seasonal signal, with CO2
 levels starting to decrease after May as the natural processes of plant
-growth and CO2 uptake take hold. \## Global Temperature Data
+growth and CO2 uptake hold.
+
+## Global Temperature Data
 
 Current climate change affects many aspects of the environment, with
 socio-economic consequences. For example, a warmer climate can allow new
@@ -124,7 +128,7 @@ documentation provided.
 -   What is the difference between "global temperature" and "global
     temperature anomaly"?
 
-**Answer 3:** The data is from NASA's Goddard Institute for Space Studies (GISS). Each column represents the year, lowess smoothing, and annual mean. The lowess smoothing and annual mean is measured in Celsius while the year is a numeric value. The difference between "global temperature" and "global temperature anomaly" is that the anomaly is referred to as the difference with observed temperature and the long-term average temperature. In other words it indicates how much the temperature for a given time frame differs from a baseline/climate reference period. The global temperature is just the actual average temperature of the earth's atmosphere.
+**Answer 3:** The data is from NASA's Goddard Institute for Space Studies (GISS). Each column represents the year, lowess smoothing, and annual mean (no smoothing). The lowess smoothing and annual mean is measured in Celsius while the year is a numeric value. The difference between "global temperature" and "global temperature anomaly" is that the anomaly is referred to as the difference with observed temperature and the long-term average temperature. In other words it indicates how much the temperature for a given time frame differs from a baseline/climate reference period. The global temperature is just the actual average temperature of the earth's atmosphere.
 
 **Question 4:**
 
@@ -139,23 +143,11 @@ helpful tips for reading the data.
 
 **Answer 4:**
 ```{r}
-library(readr)
-
-file_url <- "https://data.giss.nasa.gov/gistemp/graphs/graph_data/Global_Mean_Estimates_based_on_Land_and_Ocean_Data/graph.txt"
-
-temp_data <- read.table(file_url,
-                        sep = ",",
-                        header = TRUE,
-                        colnames(c("Year", "No_Smoothing", "Lowess(5)")),
-                        comment.char = "#", 
-                        skip = 4)
-str(temp_data)
-
-# Assuming the data has years and temperature anomalies (you can adjust column names based on your inspection)
-# Rename the columns for clarity
-#colnames(temp_data) <- c("Year", "No_Smoothing", "Lowess(5)")
-
-summary(temp_data)
+temp_data <- read_table("https://data.giss.nasa.gov/gistemp/graphs/graph_data/Global_Mean_Estimates_based_on_Land_and_Ocean_Data/graph.txt",
+                        comment = "#",
+                        col_names = c("Year", "No_Smoothing", "Lowess(5)"),
+                        skip = 5)
+temp_data
 ```
 
 
@@ -166,18 +158,20 @@ see in the plot and how you interpret the patterns you observe.
 
 ```{r}
 avg_temp <- temp_data |> 
-  group_by(No_Smoothing) |> 
-  summarize(mean_temp = mean(No_Smoothing, na.rm = TRUE))
-
-ggplot(avg_temp, aes(x = Year, y = No_Smoothing)) +
+  group_by(Year, No_Smoothing) |> 
+  summarize(mean_temp = mean(No_Smoothing, na.rm = TRUE), .groups = "drop") |> 
+  ggplot(aes(x = Year, y = mean_temp)) +
   geom_point() +
   geom_line() +
   labs(title = "Global Mean Temperatures Over Time",
        x = "Year",
        y = "Annual Mean Temperature") +
-  scale_x_continuous
+  scale_x_continuous()
+avg_temp
 ```
 **Answer 5:**
+The graph shows a clear upward trend in global mean temperatures over time. It looks like temperatures have been increasing since the late 1800s into the early 2000s. This could be due to climate change affecting global temperatures causing a steady rise in annual mean temperatures.
+
 
 ## Evaluating the evidence for a "Pause" in warming?
 
@@ -218,7 +212,7 @@ library(TTR)
 SMA(data, n = 3)
 ```
 
-To calculate a rolling average in a R, a simply command to use is the rollmean function. An example of how to use the rollmean function that was produced by Stack Overflow that used the zoo package to run. I also saw that there is another way to do the rollmean function and that is by using the the dplyr or TTR packages. For example, the TTR package offers a SMA() function to calculate the Simple Moving Average which works very similarly to the rollmean. It doesn't seem like you really need to modify the data once you have it, so this format kinda makes sense.
+To calculate a rolling average in a R, a simple command to use is the rollmean function. An example of how to use the rollmean function (produced by Stack Overflow) used the zoo package to run. I also saw that there is another way to do the rollmean function and that is by using the the dplyr or TTR packages. The TTR package offers a SMA() function to calculate the Simple Moving Average 4which works very similarly to the rollmean. It doesn't seem like you really need to modify the data once you have it, so this format kinda makes sense.
 
 **Question 7:**
 
