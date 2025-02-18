@@ -165,7 +165,8 @@ avg_temp <- temp_data |>
   labs(title = "Global Mean Temperatures Over Time",
        x = "Year",
        y = "Annual Mean Temperature") +
-  scale_x_continuous()
+  scale_x_continuous() +
+  theme_classic()
 avg_temp
 ```
 **Answer 5:**
@@ -225,13 +226,10 @@ To calculate a rolling average in R, a simple command to use is the rollmean fun
 library(dplyr)
 library(zoo)
 
-avg_temp <- data.frame(Year = 1880:2025,
-                       Temperature_Anomaly = rnorm(length(1880:2025), mean = 0, sd = 0.1))
-
-avg_temp_roll <- avg_temp %>%
-  mutate(roll_5_year = rollmean(Temperature_Anomaly, k = 5, fill = NA, align = "center"),
-         roll_10_year = rollmean(Temperature_Anomaly, k = 10, fill = NA, align = "center"),
-         roll_20_year = rollmean(Temperature_Anomaly, k = 20, fill = NA, align = "center"))
+avg_temp_roll <- temp_data %>%
+  mutate(roll_5_year = rollmean(No_Smoothing, k = 5, fill = NA, align = "center"),
+         roll_10_year = rollmean(No_Smoothing, k = 10, fill = NA, align = "center"),
+         roll_20_year = rollmean(No_Smoothing, k = 20, fill = NA, align = "center"))
 avg_temp_roll
 ```
 **Answer 7:**
@@ -244,15 +242,14 @@ differences you see and why.
 
 ```{r}
 ggplot(avg_temp_roll, aes(x = Year)) +
-  geom_line(aes(y = Temperature_Anomaly), color = "grey") +
-  geom_line(aes(y = roll_5_year), color = "blue", size = 1)+ # 5-year rolling average
-  geom_line(aes(y = roll_10_year), color = "red", size = 1) + # 10-year rolling average
-  geom_line(aes(y = roll_20_year), color = "green", size = 1) + # 20-year rolling average
+  geom_line(aes(y = roll_5_year), color = "blue")+ # 5-year rolling average
+  geom_line(aes(y = roll_10_year), color = "red") + # 10-year rolling average
+  geom_line(aes(y = roll_20_year), color = "green") + # 20-year rolling average
   labs(title = "Global Temperature Anomalies and Rolling Averages", 
        x = "Year", 
        y = "Temperature Anomaly (°C)") +
   theme_classic() +
-  scale_color_manual(values = c("grey", "blue", "red", "green"))
+  scale_color_manual(values = c("blue", "red", "green"))
 ```
 
 **Answer 8:**
@@ -264,7 +261,7 @@ By examining the data here, what evidence do you find or not find for
 such a pause?
 
 **Answer 9:**
-The pause helps in reducing the impact of noise, improving clarity, and highlighting long-term trends. It allows the reader to focus on the overall long-term trends without running the risk of misinterpreting the data by focusing on short-term data. This is especially prominent in the 20-year rolling average, in which it's much easier to read by seeing the general fluctuations of the trend line.
+There is no pause however, the pause helps in reducing the impact of noise, improving clarity, and highlighting long-term trends. It allows the reader to focus on the overall long-term trends without running the risk of misinterpreting the data by focusing on short-term data. This is especially prominent in the 20-year rolling average, in which it's much easier to read by seeing the general fluctuations of the trend line.
 
 ## Longer term trends in CO2 Records
 
@@ -332,44 +329,40 @@ that you put below in "Answer 10:"
     supporting evidence.
 
 **Answer 10:**
-The various columns used in the dataset (ice) are Depth (m), Age of the ice (yr BP), Mean age of the air (yr BP), CO2 concentration (ppmv). This data was collected from the Vostok Ice Core, which drills ice cores in the Antarctica. The data can span thousands of years from many centuries ago to present day.
+The various columns used in the dataset (ice) are Depth (m), Age of the ice (yr BP), Mean age of the air (yr BP), CO2 concentration (ppmv). This data was collected from the Vostok Ice Core, which drills ice cores in the Antarctica. The data can span thousands of years from many centuries ago to present day. Recent atmospheric CO2 levels do not compare to the overall trend in the historical levels. This is due to the industrial revolution, burning of fossil fuels, climate change, are all things that have played a factor in the dramatic rise in CO2 concentrations.
 
 ```{r}
 #read in and prepare data for analysis
 ice <-  read_table("vostok.icecore.co2", 
-                  comment="#",
-                  col_names = c("Depth (m)",
-                                "Age of the ice (yr BP)",
-                                "Mean age of the air (yr BP)",
-                                "CO2 concentration (ppmv)"),
-                  na = c("-1", "-99.99"),
-                  skip = 20)
+                   comment="#",
+                   col_names = c("Depth (m)",
+                                 "Age of the ice (yr BP)",
+                                 "Mean age of the air (yr BP)",
+                                 "CO2 concentration (ppmv)"),
+                   na = c("-1", "-99.99"),
+                   skip = 20)
 #reverse the ordering to create a chronological record
 ice <- ice |> 
-  arrange(`Age of the ice (yr BP)`) |> 
-  mutate(Year = 2025 - `Age of the ice (yr BP)`)
-#plot the data
-ggplot(ice, aes(x = Year, y = `CO2 concentration (ppmv)`)) +
+  mutate(year = 2025 - `Age of the ice (yr BP)`)
+#plot the date
+ggplot(ice, aes(x = year, y = `CO2 concentration (ppmv)`)) +
   geom_line(color = "blue") +
   labs(title = "Vostok Ice Core CO2 Levels",
        x = "Year",
        y = "CO2 Concentration (ppm)") +
   theme_classic()
 #combine with Mauna Loa data
-co2 <- data.frame(Year = 1958:2025,
-                  CO2 = rnorm(68, mean = 350, sd = 5))
-co2 <- co2 |> 
-  mutate(Source = "Mauna Loa")
-combined_data <- bind_rows(ice |>
-                             mutate(Source = "Vostok"),
-                           co2)
+co2_cleaned <- co2 |> 
+  select(decimal_date, monthly_average) |> 
+  rename(year = decimal_date,
+         `CO2 concentration (ppmv)` = monthly_average)
+ice_co2 <- bind_rows(co2_cleaned, ice)
 #plot combined data
-ggplot(combined_data, aes(x = Year, y = CO2, color = Source)) +
+ggplot(ice_co2, aes(x = year, y = `CO2 concentration (ppmv)`)) +
   geom_line() +
-  labs(title = "Atmospheric CO2 Levels: Vostok Ice Core vs. Muana Loa",
+  labs(title = "Atmospheric CO2 Levels",
        x = "Year",
        y = "CO2 Concentration (ppmv)") +
-  scale_color_manual(values = c("Vostok" = "blue", "Muana Loa" = "red")) +
   theme_classic()
 ```
 
