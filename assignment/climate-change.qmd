@@ -208,7 +208,7 @@ library(zoo)
 data <- c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
 rollmean(data, k = 3, fill = NA)
 
-#applied to this scenario
+#applied to this scenario, attempt
 roll_data <- rollmean(temp_data, k = 3, fill = NA)
 
 ```
@@ -360,7 +360,7 @@ ice_co2 <- bind_rows(co2_cleaned, ice)
 #plot combined data
 ggplot(ice_co2, aes(x = year, y = `CO2 concentration (ppmv)`)) +
   geom_line() +
-  labs(title = "Atmospheric CO2 Levels",
+  labs(title = "Atmospheric CO2 Levels Over Time",
        x = "Year",
        y = "CO2 Concentration (ppmv)") +
   theme_classic()
@@ -382,4 +382,4 @@ and the significant parts of the response. Proper documentation of
 discussion with classmates include listing their names and the
 components discussed.
 
-Used Stack Overflow and SnapchatAI to help figure out how to do question 10 - Reverse the ordering to create a chronological record so that each measurement is associcated with calender year.
+Used Stack Overflow and SnapchatAI to help figure out how to do question 10 - Reverse the ordering to create a chronological record so that each measurement is associated with calender year.
