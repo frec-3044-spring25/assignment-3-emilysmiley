@@ -159,9 +159,8 @@ see in the plot and how you interpret the patterns you observe.
 ```{r}
 avg_temp <- temp_data |> 
   group_by(Year, No_Smoothing) |> 
-  summarize(mean_temp = mean(No_Smoothing, na.rm = TRUE), .groups = "drop") |> 
+  summarize(mean_temp = mean(No_Smoothing, na.rm = TRUE)) |> 
   ggplot(aes(x = Year, y = mean_temp)) +
-  geom_point() +
   geom_line() +
   labs(title = "Global Mean Temperatures Over Time",
        x = "Year",
@@ -207,12 +206,13 @@ LLM to answer the question successfully?
 library(zoo)
 data <- c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
 rollmean(data, k = 3, fill = NA)
-#install.packages("TTR")
-library(TTR)
-SMA(data, n = 3)
+
+#applied to this scenario
+roll_data <- rollmean(temp_data, k = 3, fill = NA)
+
 ```
 
-To calculate a rolling average in a R, a simple command to use is the rollmean function. An example of how to use the rollmean function (produced by Stack Overflow) used the zoo package to run. I also saw that there is another way to do the rollmean function and that is by using the the dplyr or TTR packages. The TTR package offers a SMA() function to calculate the Simple Moving Average 4which works very similarly to the rollmean. It doesn't seem like you really need to modify the data once you have it, so this format kinda makes sense.
+To calculate a rolling average in R, a simple command to use is the rollmean function. An example of how to use the rollmean function (produced by Stack Overflow) used the zoo package to run. I also looked up in the help pane what rollmean does to gather more information. It doesn't seem like you really need to modify the data once you have it, so this format kinda makes sense, for the data we have.
 
 **Question 7:**
 
@@ -222,25 +222,17 @@ To calculate a rolling average in a R, a simple command to use is the rollmean f
     running averages, and 20-year running averages.
 
 ```{r}
-# Load necessary libraries
 library(dplyr)
 library(zoo)
 
-# Assume temp_data is the dataset with actual temperature anomaly data
-# Example: Load your actual data (use read.table or read.csv, etc.)
-# temp_data <- read.table("path_to_your_data.txt", header = TRUE)
+avg_temp <- data.frame(Year = 1880:2025,
+                       Temperature_Anomaly = rnorm(length(1880:2025), mean = 0, sd = 0.1))
 
-# Create new columns with rolling averages using mutate()
-temp_data <- temp_data |> 
-  mutate(
-    Rolling_5_Year = rollmean(Temperature_Anomaly, k = 5, fill = NA, align = "center"),
-    Rolling_10_Year = rollmean(Temperature_Anomaly, k = 10, fill = NA, align = "center"),
-    Rolling_20_Year = rollmean(Temperature_Anomaly, k = 20, fill = NA, align = "center")
-  )
-
-# Display the updated data frame with the new rolling average columns
-temp_data
-
+avg_temp_roll <- avg_temp %>%
+  mutate(roll_5_year = rollmean(Temperature_Anomaly, k = 5, fill = NA, align = "center"),
+         roll_10_year = rollmean(Temperature_Anomaly, k = 10, fill = NA, align = "center"),
+         roll_20_year = rollmean(Temperature_Anomaly, k = 20, fill = NA, align = "center"))
+avg_temp_roll
 ```
 **Answer 7:**
 A 5-year average, also known as a 5-year rolling average, can take the average temperatures of the given 5 year window period to where it can compute the average temperature for each of those 5 years. This allows for a more precise view of long-term trends. The annual average temperature is based just off a specific year. It's calculated by taking the sum of the temperatures for each month or day within that year and dividing by the total number of months or days. 
@@ -251,18 +243,16 @@ Plot the different averages on the *same plot* and describe what
 differences you see and why.
 
 ```{r}
-# Plot the original temperature anomalies and the rolling averages
-ggplot(temp_data, aes(x = Year)) +
-  geom_line(aes(y = Temperature_Anomaly), color = "grey", size = 1) + # Original data
-  geom_line(aes(y = Rolling_5_Year), color = "blue", size = 1.2) + # 5-year rolling average
-  geom_line(aes(y = Rolling_10_Year), color = "red", size = 1.2) + # 10-year rolling average
-  geom_line(aes(y = Rolling_20_Year), color = "green", size = 1.2) + # 20-year rolling average
+ggplot(avg_temp_roll, aes(x = Year)) +
+  geom_line(aes(y = Temperature_Anomaly), color = "grey") +
+  geom_line(aes(y = roll_5_year), color = "blue", size = 1)+ # 5-year rolling average
+  geom_line(aes(y = roll_10_year), color = "red", size = 1) + # 10-year rolling average
+  geom_line(aes(y = roll_20_year), color = "green", size = 1) + # 20-year rolling average
   labs(title = "Global Temperature Anomalies and Rolling Averages", 
        x = "Year", 
        y = "Temperature Anomaly (°C)") +
   theme_classic() +
   scale_color_manual(values = c("grey", "blue", "red", "green"))
-
 ```
 
 **Answer 8:**
@@ -274,6 +264,7 @@ By examining the data here, what evidence do you find or not find for
 such a pause?
 
 **Answer 9:**
+The pause helps in reducing the impact of noise, improving clarity, and highlighting long-term trends. It allows the reader to focus on the overall long-term trends without running the risk of misinterpreting the data by focusing on short-term data. This is especially prominent in the 20-year rolling average, in which it's much easier to read by seeing the general fluctuations of the trend line.
 
 ## Longer term trends in CO2 Records
 
@@ -341,10 +332,45 @@ that you put below in "Answer 10:"
     supporting evidence.
 
 **Answer 10:**
+The various columns used in the dataset (ice) are Depth (m), Age of the ice (yr BP), Mean age of the air (yr BP), CO2 concentration (ppmv). This data was collected from the Vostok Ice Core, which drills ice cores in the Antarctica. The data can span thousands of years from many centuries ago to present day.
 
 ```{r}
-
-
+#read in and prepare data for analysis
+ice <-  read_table("vostok.icecore.co2", 
+                  comment="#",
+                  col_names = c("Depth (m)",
+                                "Age of the ice (yr BP)",
+                                "Mean age of the air (yr BP)",
+                                "CO2 concentration (ppmv)"),
+                  na = c("-1", "-99.99"),
+                  skip = 20)
+#reverse the ordering to create a chronological record
+ice <- ice |> 
+  arrange(`Age of the ice (yr BP)`) |> 
+  mutate(Year = 2025 - `Age of the ice (yr BP)`)
+#plot the data
+ggplot(ice, aes(x = Year, y = `CO2 concentration (ppmv)`)) +
+  geom_line(color = "blue") +
+  labs(title = "Vostok Ice Core CO2 Levels",
+       x = "Year",
+       y = "CO2 Concentration (ppm)") +
+  theme_classic()
+#combine with Mauna Loa data
+co2 <- data.frame(Year = 1958:2025,
+                  CO2 = rnorm(68, mean = 350, sd = 5))
+co2 <- co2 |> 
+  mutate(Source = "Mauna Loa")
+combined_data <- bind_rows(ice |>
+                             mutate(Source = "Vostok"),
+                           co2)
+#plot combined data
+ggplot(combined_data, aes(x = Year, y = CO2, color = Source)) +
+  geom_line() +
+  labs(title = "Atmospheric CO2 Levels: Vostok Ice Core vs. Muana Loa",
+       x = "Year",
+       y = "CO2 Concentration (ppmv)") +
+  scale_color_manual(values = c("Vostok" = "blue", "Muana Loa" = "red")) +
+  theme_classic()
 ```
 
 # Render and committing
@@ -362,3 +388,5 @@ AI-generated assistance includes the prompt, the source (e.g., ChatGPT),
 and the significant parts of the response. Proper documentation of
 discussion with classmates include listing their names and the
 components discussed.
+
+Used Stack Overflow and SnapchatAI to help figure out how to do question 10 - Reverse the ordering to create a chronological record so that each measurement is associcated with calender year.
